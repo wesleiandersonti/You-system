@@ -65,6 +65,10 @@ sudo certbot --nginx -d seu-dominio.com
 ## Compatibilidade
 `You.php` foi mantido como ponte para o endpoint novo em `public/index.php`.
 
+## Documentação completa
+Veja detalhes de arquitetura e melhorias em:
+- `docs/DOCUMENTACAO_PROJETO_E_MELHORIAS.md`
+
 ## Aviso
 Este método depende de parsing de HTML do YouTube (pode quebrar com mudanças do site).
 Para produção 24/7, prefira serviço dedicado com monitoramento e fallback.
