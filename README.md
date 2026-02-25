@@ -59,10 +59,14 @@ Após instalar:
 ./deploy/healthcheck.sh
 ```
 
-### HTTPS (opcional/recomendado)
+- Hardening (UFW + Fail2ban + headers Nginx):
 ```bash
-sudo apt-get install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d seu-dominio.com
+./deploy/hardening-ubuntu.sh
+```
+
+- Hardening + HTTPS (certbot):
+```bash
+./deploy/hardening-ubuntu.sh seu-dominio.com seu-email@dominio.com yes
 ```
 
 ## Compatibilidade
