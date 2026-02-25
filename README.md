@@ -13,6 +13,10 @@ Versão organizada/profissional do script `You.php` para uso interno.
 - Tratamento de erro padronizado
 - Resposta JSON opcional (`format=json`)
 - Config central em `config/config.php`
+- Token de API opcional (`YOU_SYSTEM_TOKEN`)
+- Rate limit por IP
+- Cache local com TTL
+- Logs JSON em `logs/`
 
 ## Uso rápido
 
@@ -22,10 +26,15 @@ php -S 127.0.0.1:8090 -t public
 ```
 
 ### 2) Exemplos
+- Health:
+  `http://127.0.0.1:8090/?health=1`
 - Redirect (padrão):
   `http://127.0.0.1:8090/?id=WkhCfPPgqWc`
 - JSON:
   `http://127.0.0.1:8090/?id=WkhCfPPgqWc&format=json`
+
+Se `YOU_SYSTEM_TOKEN` estiver definido:
+- `http://127.0.0.1:8090/?id=WkhCfPPgqWc&format=json&token=SEU_TOKEN`
 
 ## Ubuntu 22.04 (instalação)
 Scripts prontos em `deploy/`:
@@ -45,6 +54,12 @@ Após instalar:
 - Healthcheck:
 ```bash
 ./deploy/healthcheck.sh
+```
+
+### HTTPS (opcional/recomendado)
+```bash
+sudo apt-get install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d seu-dominio.com
 ```
 
 ## Compatibilidade
