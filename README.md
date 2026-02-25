@@ -13,10 +13,14 @@ Versão organizada/profissional do script `You.php` para uso interno.
 - Tratamento de erro padronizado
 - Resposta JSON opcional (`format=json`)
 - Config central em `config/config.php`
-- Token de API opcional (`YOU_SYSTEM_TOKEN`)
+- Token de API obrigatório por padrão (`YOU_SYSTEM_TOKEN`)
+- Whitelist de IP opcional
 - Rate limit por IP
 - Cache local com TTL
-- Logs JSON em `logs/`
+- Retry com backoff para resolução
+- Logs JSON em `logs/` com retenção
+- Endpoint `metrics` para operação
+- Docker Compose pronto
 
 ## Uso rápido
 
@@ -28,13 +32,12 @@ php -S 127.0.0.1:8090 -t public
 ### 2) Exemplos
 - Health:
   `http://127.0.0.1:8090/?health=1`
+- Metrics:
+  `http://127.0.0.1:8090/?metrics=1`
 - Redirect (padrão):
-  `http://127.0.0.1:8090/?id=WkhCfPPgqWc`
+  `http://127.0.0.1:8090/?id=WkhCfPPgqWc&token=SEU_TOKEN`
 - JSON:
-  `http://127.0.0.1:8090/?id=WkhCfPPgqWc&format=json`
-
-Se `YOU_SYSTEM_TOKEN` estiver definido:
-- `http://127.0.0.1:8090/?id=WkhCfPPgqWc&format=json&token=SEU_TOKEN`
+  `http://127.0.0.1:8090/?id=WkhCfPPgqWc&format=json&token=SEU_TOKEN`
 
 ## Ubuntu 22.04 (instalação)
 Scripts prontos em `deploy/`:

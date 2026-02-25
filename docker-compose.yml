@@ -1,0 +1,17 @@
+version: '3.9'
+services:
+  you-system:
+    image: php:8.2-apache
+    container_name: you-system
+    restart: unless-stopped
+    ports:
+      - "8090:80"
+    environment:
+      YOU_SYSTEM_TOKEN: "change-me"
+    volumes:
+      - ./:/var/www/html
+    working_dir: /var/www/html
+    command: >
+      bash -lc "a2enmod rewrite && cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/000-default.conf.bak &&
+      sed -i 's#DocumentRoot /var/www/html#DocumentRoot /var/www/html/public#g' /etc/apache2/sites-available/000-default.conf &&
+      apache2-foreground"

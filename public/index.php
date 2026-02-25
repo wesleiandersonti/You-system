@@ -10,7 +10,10 @@ require __DIR__ . '/../src/RateLimiter.php';
 
 header('Access-Control-Allow-Origin: ' . ($config['allowOrigin'] ?? '*'));
 
-$logger = new AppLogger((string)($config['logDir'] ?? (__DIR__ . '/../logs')));
+$logger = new AppLogger(
+    (string)($config['logDir'] ?? (__DIR__ . '/../logs')),
+    (int)($config['logRetentionDays'] ?? 7)
+);
 $cache = new FileCache((string)($config['cacheDir'] ?? (__DIR__ . '/../cache')), (int)($config['cacheTtlSeconds'] ?? 120));
 $limiter = new RateLimiter((string)($config['cacheDir'] ?? (__DIR__ . '/../cache')), (int)($config['rateLimitWindowSeconds'] ?? 60), (int)($config['rateLimitMaxRequests'] ?? 30));
 
@@ -24,14 +27,43 @@ if (isset($_GET['health'])) {
     ]);
 }
 
+if (isset($_GET['metrics'])) {
+    $logDir = (string)($config['logDir'] ?? (__DIR__ . '/../logs'));
+    $todayLog = rtrim($logDir, '/\\') . DIRECTORY_SEPARATOR . 'you-system-' . date('Ymd') . '.log';
+    $ok = 0;
+    $fail = 0;
+    if (is_file($todayLog)) {
+        foreach (file($todayLog, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+            $j = json_decode($line, true);
+            if (!is_array($j) || !isset($j['event'])) continue;
+            if ($j['event'] === 'resolve_ok') $ok++;
+            if ($j['event'] === 'resolve_fail') $fail++;
+        }
+    }
+
+    HttpResponder::json([
+        'ok' => true,
+        'date' => date('Y-m-d'),
+        'resolve_ok' => $ok,
+        'resolve_fail' => $fail,
+    ]);
+}
+
+$allowedIps = (array)($config['allowedIps'] ?? []);
+if (!empty($allowedIps) && !in_array($ip, $allowedIps, true)) {
+    $logger->error('forbidden_ip', ['ip' => $ip]);
+    HttpResponder::json(['ok' => false, 'error' => 'IP não autorizado.'], 403);
+}
+
 if (!$limiter->hit($ip)) {
     $logger->error('rate_limit', ['ip' => $ip]);
     HttpResponder::json(['ok' => false, 'error' => 'Rate limit excedido.'], 429);
 }
 
 $requiredToken = (string)($config['apiToken'] ?? '');
+$requireToken = (bool)($config['requireToken'] ?? true);
 $token = trim((string)($_GET['token'] ?? $_SERVER['HTTP_X_API_TOKEN'] ?? ''));
-if ($requiredToken !== '' && !hash_equals($requiredToken, $token)) {
+if ($requireToken && ($requiredToken === '' || !hash_equals($requiredToken, $token))) {
     $logger->error('unauthorized', ['ip' => $ip]);
     HttpResponder::json(['ok' => false, 'error' => 'Token inválido.'], 401);
 }
@@ -49,6 +81,9 @@ if ($videoId === '') {
 $cacheKey = 'yt_' . $videoId;
 $cached = $cache->get($cacheKey);
 
+$maxAttempts = (int)($config['resolveRetries'] ?? 3);
+$backoffMs = (int)($config['resolveBackoffMs'] ?? 350);
+
 try {
     if ($cached !== null) {
         $hlsUrl = $cached;
@@ -59,7 +94,25 @@ try {
             (int)($config['timeoutSeconds'] ?? 12)
         );
 
-        $hlsUrl = $resolver->resolveHlsUrl($videoId);
+        $lastError = null;
+        $hlsUrl = null;
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                $hlsUrl = $resolver->resolveHlsUrl($videoId);
+                break;
+            } catch (Throwable $e) {
+                $lastError = $e;
+                if ($attempt < $maxAttempts) {
+                    usleep(($backoffMs * $attempt) * 1000);
+                }
+            }
+        }
+
+        if (!is_string($hlsUrl) || $hlsUrl === '') {
+            throw new RuntimeException($lastError?->getMessage() ?? 'Falha ao resolver HLS após retries.');
+        }
+
         $cache->set($cacheKey, $hlsUrl);
         $cacheHit = false;
     }

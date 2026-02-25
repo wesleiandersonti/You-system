@@ -1,0 +1,5 @@
+Para parar o servidor:
+- Volte na janela do run-you-system.bat
+- Pressione CTRL + C
+
+Se quiser rodar em segundo plano no futuro, posso criar tarefa do Windows para iniciar automaticamente.

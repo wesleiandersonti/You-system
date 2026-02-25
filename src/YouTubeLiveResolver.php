@@ -14,6 +14,26 @@ final class YouTubeLiveResolver
             throw new InvalidArgumentException('ID de vídeo inválido.');
         }
 
+        $html = $this->fetchWatchHtml($videoId);
+
+        $strategies = [
+            fn(string $h) => $this->extractByHlsManifestUrl($h),
+            fn(string $h) => $this->extractByUrlEncodedField($h),
+            fn(string $h) => $this->extractByAnyM3u8($h),
+        ];
+
+        foreach ($strategies as $extractor) {
+            $candidate = $extractor($html);
+            if ($candidate !== null) {
+                return $candidate;
+            }
+        }
+
+        throw new RuntimeException('hlsManifestUrl não encontrado (vídeo pode não estar ao vivo).');
+    }
+
+    private function fetchWatchHtml(string $videoId): string
+    {
         $url = 'https://www.youtube.com/watch?v=' . urlencode($videoId);
         $context = stream_context_create([
             'http' => [
@@ -28,15 +48,49 @@ final class YouTubeLiveResolver
             throw new RuntimeException('Falha ao consultar a página do YouTube.');
         }
 
+        return $html;
+    }
+
+    private function extractByHlsManifestUrl(string $html): ?string
+    {
         if (!preg_match('/"hlsManifestUrl":"([^"]+)"/', $html, $matches)) {
-            throw new RuntimeException('hlsManifestUrl não encontrado (vídeo pode não estar ao vivo).');
+            return null;
         }
+        return $this->decodeUrlCandidate($matches[1]);
+    }
 
-        $decoded = json_decode('"' . $matches[1] . '"', true);
-        if (!is_string($decoded) || !str_starts_with($decoded, 'http')) {
-            throw new RuntimeException('URL HLS inválida após decode.');
+    private function extractByUrlEncodedField(string $html): ?string
+    {
+        if (!preg_match('/hlsManifestUrl\\u003d([^\\"&]+)/', $html, $matches)) {
+            return null;
         }
+        $url = urldecode((string)$matches[1]);
+        return $this->sanitizeUrl($url);
+    }
 
-        return $decoded;
+    private function extractByAnyM3u8(string $html): ?string
+    {
+        if (!preg_match('/https:\\/\\/[^"\']+\.m3u8[^"\']*/', $html, $matches)) {
+            return null;
+        }
+        $raw = str_replace('\\/', '/', $matches[0]);
+        return $this->sanitizeUrl($raw);
+    }
+
+    private function decodeUrlCandidate(string $raw): ?string
+    {
+        $decoded = json_decode('"' . $raw . '"', true);
+        if (!is_string($decoded)) {
+            return null;
+        }
+        return $this->sanitizeUrl($decoded);
+    }
+
+    private function sanitizeUrl(string $url): ?string
+    {
+        if (!str_starts_with($url, 'http')) {
+            return null;
+        }
+        return filter_var($url, FILTER_VALIDATE_URL) ? $url : null;
     }
 }
