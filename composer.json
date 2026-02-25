@@ -1,0 +1,20 @@
+{
+  "name": "wesleiandersonti/you-system",
+  "description": "You-system: resolvedor interno de HLS para YouTube Live",
+  "type": "project",
+  "require": {
+    "php": ">=8.1"
+  },
+  "require-dev": {
+    "squizlabs/php_codesniffer": "^3.10"
+  },
+  "autoload": {
+    "classmap": [
+      "src/"
+    ]
+  },
+  "scripts": {
+    "lint": "php -l public/index.php && php -l src/YouTubeLiveResolver.php && php -l src/HttpResponder.php && php -l src/AppLogger.php && php -l src/FileCache.php && php -l src/RateLimiter.php",
+    "cs": "phpcs --standard=phpcs.xml ."
+  }
+}

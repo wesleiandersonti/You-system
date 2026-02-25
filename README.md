@@ -72,6 +72,19 @@ Após instalar:
 ## Compatibilidade
 `You.php` foi mantido como ponte para o endpoint novo em `public/index.php`.
 
+## Qualidade de código (PSR-12)
+Arquivos adicionados:
+- `composer.json`
+- `phpcs.xml`
+- `.editorconfig`
+
+Comandos (quando tiver Composer/PHP no ambiente):
+```bash
+composer install
+composer run lint
+composer run cs
+```
+
 ## Documentação completa
 Veja detalhes de arquitetura e melhorias em:
 - `docs/DOCUMENTACAO_PROJETO_E_MELHORIAS.md`
