@@ -27,6 +27,26 @@ php -S 127.0.0.1:8090 -t public
 - JSON:
   `http://127.0.0.1:8090/?id=WkhCfPPgqWc&format=json`
 
+## Ubuntu 22.04 (instalação)
+Scripts prontos em `deploy/`:
+
+```bash
+chmod +x deploy/*.sh
+./deploy/install-ubuntu-22.04.sh
+```
+
+Após instalar:
+
+- Atualizar:
+```bash
+./deploy/update.sh
+```
+
+- Healthcheck:
+```bash
+./deploy/healthcheck.sh
+```
+
 ## Compatibilidade
 `You.php` foi mantido como ponte para o endpoint novo em `public/index.php`.
 
